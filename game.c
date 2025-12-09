@@ -3,10 +3,7 @@
 #include <windows.h>
 #include <stdlib.h>
 #include <time.h>
-/*for bg sound*/
 #include <mmsystem.h>
-
-/*to remove flicker*/
 void clear_screen_fast() {
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     COORD pos = {0, 0};
@@ -14,75 +11,81 @@ void clear_screen_fast() {
 }
 
 int main() {
-	system("color 4F");
-	PlaySound(TEXT("bg.wav"), NULL, SND_ASYNC | SND_LOOP);
+    system("color 4F");
     srand(time(0));
 
-    int x = 1;              // player position (0 to 2)
-    int step = 0;           // obstacle vertical movement
-    int obstaclePos = rand() % 3;   // 0,1,2 lane
+RESTART_GAME:
+    PlaySound(TEXT("bg.wav"), NULL, SND_ASYNC | SND_LOOP);
+
+    int x = 1;
+    int step = 0;
+    int obstaclePos = rand() % 3;
+
+    int score = 0;
+    int lives = 3;
 
     while (1) {
-
-        // ---- INPUT ----
         if (_kbhit()) {
             char ch = getch();
 
-            if (ch == 75 && x > 0)        // LEFT arrow
-                x--;
-
-            if (ch == 77 && x < 2)        // RIGHT arrow
-                x++;
+            if (ch == 75 && x > 0)    x--;     // left
+            if (ch == 77 && x < 2)    x++;
         }
+        clear_screen_fast();
 
-        // ---- DRAW ----
-		// system("cls");
-		clear_screen_fast();
-        printf("|--- --- ---|\n");
-
+        printf("|--- GAME ---|\n");
+        printf("Score: %d   Lives: %d\n\n", score, lives);
         for (int i = 0; i < 10; i++) {
             if (i == step) {
-
                 if (obstaclePos == 0)
                     printf("| %c        |\n", 1);
-
                 else if (obstaclePos == 1)
                     printf("|     %c    |\n", 1);
-
                 else if (obstaclePos == 2)
                     printf("|        %c |\n", 1);
-
-            } else {
+            } 
+            else {
                 printf("|           |\n");
             }
         }
-
-        // ---- PLAYER ----
         if (x == 0)
             printf("| %c         |\n", 6);
         else if (x == 1)
             printf("|     %c     |\n", 6);
         else if (x == 2)
             printf("|        %c  |\n", 6);
-
-        // ---- COLLISION ----
         if (step == 10 && x == obstaclePos) {
-        	PlaySound(NULL, NULL, 0);  // stop background
-			PlaySound(TEXT("impact.wav"), NULL, SND_ASYNC);
-        	Sleep(2500);
-            printf("\nGAME OVER!\n");
-            break;
+
+            lives--;
+            PlaySound(NULL, NULL, 0);
+            PlaySound(TEXT("impact.wav"), NULL, SND_ASYNC);
+            Sleep(1000);
+
+            if (lives == 0) {
+                printf("\n\nGAME OVER!\n");
+                printf("Final Score: %d\n", score);
+                printf("\nPress R to Restart or Q to Quit.\n");
+                while (1) {
+                    char ch = getch();
+                    if (ch == 'r' || ch == 'R') {
+                        clear_screen_fast();
+                        goto RESTART_GAME;
+                    }
+                    if (ch == 'q' || ch == 'Q') {
+                        return 0;
+                    }
+                }
+            }
+            step = 0;
+            obstaclePos = rand() % 3;
         }
 
         Sleep(120);
-
-        // Move obstacle down
         step++;
-
-        // Reset when reaches bottom
-        if (step > 10) {
+        if (step > 10){
+            score++;
             step = 0;
-            obstaclePos = rand() % 3; // new lane
+            obstaclePos = rand() % 3;
         }
     }
 
